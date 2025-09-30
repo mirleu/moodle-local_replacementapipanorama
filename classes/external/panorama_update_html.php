@@ -92,8 +92,9 @@ class panorama_update_html extends \external_api {
                 empty($params['identifierkey']) || empty($params['tablename']))) {
                 throw new invalid_parameter_exception('Missing parameters:');
             }
-            // Determine which field to edit.
+            // Determine which field to edit and the name of the DB update function.
             $contentfieldname;
+            $updatefunction = '';
             switch ($tablename) {
                 case 'assign':
                 case 'forum': // Maps to Announcement.
@@ -107,16 +108,19 @@ class panorama_update_html extends \external_api {
                 case 'wiki':
                 case 'workshop':
                     $contentfieldname = 'intro';
+                    $updatefunction = $tablename . '_update_instance';
                     break;
                 case 'forum_posts': // Maps to Discussion Topic.
                 case 'forum_discussions': // Maps to Discussion Topic.
                 case 'discussion':
                 case 'discussion-topic': // Maps to Forum Topic.
                     $contentfieldname = 'message';
+                    $updatefunction = 'forum_update_post';
                     break;
                 case 'page':
                 default:
                     $contentfieldname = 'content';
+                    $updatefunction = $tablename . '_update_instance';
                     break;
             }
 
@@ -129,7 +133,7 @@ class panorama_update_html extends \external_api {
                 ];
             }
             try {
-                $signedurl = common_helper_panorama::get_signed_url($documentid, $identifierkey);
+                $signedurl = common_helper_panorama::get_signed_url($params['documentid'], $params['identifierkey']);
             } catch (\Exception $e) {
                 return [
                     'status' => 'failed',
@@ -151,9 +155,12 @@ class panorama_update_html extends \external_api {
                     ];
                 }
                 $resource->{$contentfieldname} = $content;
+                $resource->instance = $resource->id;
                 $resource->revision++;
                 $resource->timemodified = time();
-                if (!$DB->update_record($tablename, $resource)) {
+
+                $result = $updatefunction($resource, null);
+                if (!result) {
                     return [
                         'status' => 'failed',
                         'fileid' => 0,

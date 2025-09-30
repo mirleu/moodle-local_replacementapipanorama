@@ -28,6 +28,7 @@ defined('MOODLE_INTERNAL') || die('Must access from moodle');
 
 global $CFG;
 require_once($CFG->dirroot. '/lib/externallib.php');
+require_once($CFG->dirroot. '/mod/resource/lib.php');
 require_once($CFG->dirroot. '/local/replacementapipanorama/lib/common_helper_panorama.php');
 
 use common_helper_panorama;
@@ -125,7 +126,7 @@ class panorama_update_file extends \external_api {
             }
 
             try {
-                $signedurl = common_helper_panorama::get_signed_url($documentid, $identifierkey);
+                $signedurl = common_helper_panorama::get_signed_url($params['documentid'], $params['identifierkey']);
             } catch (\Exception $e) {
                 return [
                     'status' => 'failed',
@@ -178,10 +179,12 @@ class panorama_update_file extends \external_api {
             $newfile->delete();
             unlink($tempfilepath);
 
+            $resource->instance = $resource->id;
             $resource->revision++;
             $resource->timemodified = time();
 
-            if (!$DB->update_record('resource', $resource)) {
+            $result = resource_update_instance($resource, null);
+            if (!result) {
                 return [
                     'status' => 'failed',
                     'fileid' => 0,

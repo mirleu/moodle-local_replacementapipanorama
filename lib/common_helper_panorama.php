@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die('Must access from moodle');
 global $CFG;
 require_once($CFG->dirroot. '/lib/externallib.php');
-use external_settings;
+use core_external\external_settings;
 
 /**
  * Helper functions for YuJa Panorama file replacement plugin.
@@ -65,9 +65,10 @@ class common_helper_panorama {
         $params['instanceid'] = $instance->id;
 
         $query = "SELECT cm.id AS coursemodule, m.*, cw.section, cm.visible AS visible, cm.groupmode, cm.groupingid ";
-        $query .= "\n FROM {course_modules} cm, {course_sections} cw, {modules} md, {".$modulename."} m ";
-        $query .= "\n WHERE cm.course $coursessql AND cm.instance = m.id AND cm.section = cw.id ";
-        $query .= "AND md.name = :modulename AND md.id = cm.module AND m.id = :instanceid";
+        $query .= "\n FROM {course_modules} cm JOIN {course_sections} cw ON cm.section = cw.id ";
+        $query .= "\n JOIN {modules} md ON md.id = cm.module ";
+        $query .= "\n {".$modulename."} m ON cm.instance = m.id ";
+        $query .= "\n WHERE cm.course $coursessql AND md.name = :modulename AND m.id = :instanceid";
         $instance = $DB->get_records_sql($query, $params);
         $instance = reset($instance);
 
@@ -139,21 +140,27 @@ class common_helper_panorama {
         $config = get_config('panorama');
         $serverurl = 'UNKNOWN';
 
+        $serverstaging = "https://staging-panorama-api.yuja.com";
+        $serverus = "https://panorama-api.yuja.com";
+        $serverca = "https://panorama-api-cz.yuja.com";
+        $servereu = "https://panorama-api-ez.yuja.com";
+        $serveraz = "https://panorama-api-az.yuja.com";
+
         switch ($config->environment) {
             case "Staging":
-                $serverurl = "https://staging-panorama-api.yuja.com";
+                $serverurl = $serverstaging;
                 break;
             case "Production US":
-                $serverurl = "https://panorama-api.yuja.com";
+                $serverurl = $serverus;
                 break;
             case "Production CA":
-                $serverurl = "https://panorama-api-cz.yuja.com";
+                $serverurl = $serverca;
                 break;
             case "Production EU":
-                $serverurl = "https://panorama-api-ez.yuja.com";
+                $serverurl = $servereu;
                 break;
             case "Production AZ":
-                $serverurl = "https://panorama-api-az.yuja.com";
+                $serverurl = $serveraz;
                 break;
         }
 

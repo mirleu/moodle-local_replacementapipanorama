@@ -96,10 +96,11 @@ class panorama_update_attachment extends \external_api {
             $filearea  = $pathparts[2];
             $itemid    = $pathparts[3];
             $filename  = array_pop($pathparts);
+            $decodedfilename = urldecode($filename);
             $filepath  = '/' . implode('/', array_slice($pathparts, 4)) . '/';
 
             $fs = get_file_storage();
-            $existingfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $filename);
+            $existingfile = $fs->get_file($contextid, $component, $filearea, $itemid, $filepath, $decodedfilename);
 
             if (!$existingfile || $existingfile->is_directory()) {
                 return [
@@ -110,7 +111,7 @@ class panorama_update_attachment extends \external_api {
             }
 
             try {
-                $signedurl = common_helper_panorama::get_signed_url($documentid, $identifierkey);
+                $signedurl = common_helper_panorama::get_signed_url($params['documentid'], $params['identifierkey']);
             } catch (\Exception $e) {
                 return [
                     'status' => 'failed',
