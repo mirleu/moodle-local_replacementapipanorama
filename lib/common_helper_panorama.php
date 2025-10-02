@@ -25,7 +25,8 @@
 defined('MOODLE_INTERNAL') || die('Must access from moodle');
 global $CFG;
 require_once($CFG->dirroot. '/lib/externallib.php');
-use core_external\external_settings;
+// PHPUnit error: The use statement with non-compound name 'external_settings' has no effect
+// use core_external\external_settings;
 
 /**
  * Helper functions for YuJa Panorama file replacement plugin.
