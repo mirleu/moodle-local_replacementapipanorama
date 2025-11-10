@@ -27,8 +27,8 @@ namespace local_replacementapipanorama\external;
 defined('MOODLE_INTERNAL') || die('Must access from moodle');
 
 global $CFG;
-require_once($CFG->dirroot. '/lib/externallib.php');
-require_once($CFG->dirroot. '/local/replacementapipanorama/lib/common_helper_panorama.php');
+require_once($CFG->dirroot . '/lib/externallib.php');
+require_once($CFG->dirroot . '/local/replacementapipanorama/lib/common_helper_panorama.php');
 
 use common_helper_panorama;
 use external_function_parameters;
@@ -51,8 +51,11 @@ class panorama_update_attachment extends \external_api {
      */
     public static function execute_parameters() {
         return new external_function_parameters([
-            'filepath' => new external_value(PARAM_TEXT, 'The full file path ID, e.g., "/28/mod_resource/content/0/file.ppt"',
-                VALUE_REQUIRED),
+            'filepath' => new external_value(
+                PARAM_TEXT,
+                'The full file path ID, e.g., "/28/mod_resource/content/0/file.ppt"',
+                VALUE_REQUIRED
+            ),
             'documentid' => new external_value(PARAM_TEXT, 'A panorama documentid for the new file content', VALUE_REQUIRED),
             'identifierkey'  => new external_value(PARAM_TEXT, 'An institution key', VALUE_REQUIRED),
         ]);

@@ -27,9 +27,9 @@ namespace local_replacementapipanorama\external;
 defined('MOODLE_INTERNAL') || die('Must access from moodle');
 
 global $CFG;
-require_once($CFG->dirroot. '/lib/externallib.php');
-require_once($CFG->dirroot. '/mod/resource/lib.php');
-require_once($CFG->dirroot. '/local/replacementapipanorama/lib/common_helper_panorama.php');
+require_once($CFG->dirroot . '/lib/externallib.php');
+require_once($CFG->dirroot . '/mod/resource/lib.php');
+require_once($CFG->dirroot . '/local/replacementapipanorama/lib/common_helper_panorama.php');
 
 use common_helper_panorama;
 use external_function_parameters;
@@ -46,15 +46,17 @@ use moodle_exception;
  * content of a file fetched from Panorama.
  */
 class panorama_update_file extends \external_api {
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
      */
     public static function execute_parameters() {
         return new external_function_parameters([
-            'filepath' => new external_value(PARAM_TEXT, 'The full file path ID, e.g., "/28/mod_resource/content/0/file.ppt"',
-                VALUE_REQUIRED),
+            'filepath' => new external_value(
+                PARAM_TEXT,
+                'The full file path ID, e.g., "/28/mod_resource/content/0/file.ppt"',
+                VALUE_REQUIRED
+            ),
             'documentid'     => new external_value(PARAM_TEXT, 'A panorama documentid for the new file content', VALUE_REQUIRED),
             'identifierkey'  => new external_value(PARAM_TEXT, 'An institution key', VALUE_REQUIRED),
             'resourceid'    => new external_value(PARAM_INT, 'The ID of the resource instance', VALUE_REQUIRED),
@@ -84,8 +86,10 @@ class panorama_update_file extends \external_api {
         try {
             global $DB, $CFG;
 
-            $params = self::validate_parameters(self::execute_parameters(),
-                compact('filepath', 'documentid', 'identifierkey', 'resourceid'));
+            $params = self::validate_parameters(
+                self::execute_parameters(),
+                compact('filepath', 'documentid', 'identifierkey', 'resourceid')
+            );
             self::validate_context(context_system::instance());
 
             $pathparts = explode('/', ltrim($params['filepath'], '/'));

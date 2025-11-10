@@ -24,7 +24,7 @@
 
 defined('MOODLE_INTERNAL') || die('Must access from moodle');
 global $CFG;
-require_once($CFG->dirroot. '/lib/externallib.php');
+require_once($CFG->dirroot . '/lib/externallib.php');
 // PHPUnit error: The use statement with non-compound name 'external_settings' has no effect
 // use core_external\external_settings;
 
@@ -32,7 +32,6 @@ require_once($CFG->dirroot. '/lib/externallib.php');
  * Helper functions for YuJa Panorama file replacement plugin.
  */
 class common_helper_panorama {
-
     /**
      * Generates a random alphanumeric string of variable length.
      * @param mixed $length
@@ -59,16 +58,16 @@ class common_helper_panorama {
 
         $instance = $DB->get_record($modulename, ['id' => $id]);
 
-        list($courses, $warnings) = external_util::validate_courses([$instance->course], []);
+        [$courses, $warnings] = external_util::validate_courses([$instance->course], []);
 
-        list($coursessql, $params) = $DB->get_in_or_equal(array_keys($courses), SQL_PARAMS_NAMED, 'c0');
+        [$coursessql, $params] = $DB->get_in_or_equal(array_keys($courses), SQL_PARAMS_NAMED, 'c0');
         $params['modulename'] = $modulename;
         $params['instanceid'] = $instance->id;
 
         $query = "SELECT cm.id AS coursemodule, m.*, cw.section, cm.visible AS visible, cm.groupmode, cm.groupingid ";
         $query .= "\n FROM {course_modules} cm JOIN {course_sections} cw ON cm.section = cw.id ";
         $query .= "\n JOIN {modules} md ON md.id = cm.module ";
-        $query .= "\n {".$modulename."} m ON cm.instance = m.id ";
+        $query .= "\n {" . $modulename . "} m ON cm.instance = m.id ";
         $query .= "\n WHERE cm.course $coursessql AND md.name = :modulename AND m.id = :instanceid";
         $instance = $DB->get_records_sql($query, $params);
         $instance = reset($instance);
@@ -167,5 +166,4 @@ class common_helper_panorama {
 
         return $serverurl;
     }
-
 }
