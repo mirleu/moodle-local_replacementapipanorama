@@ -25,7 +25,7 @@
 defined('MOODLE_INTERNAL') || die('Must access from moodle');
 
 $plugin                     = new stdClass();
-$plugin->version            = 2025080600;
+$plugin->version            = 2025110400;
 $plugin->requires           = 2020061500.00;
 $plugin->component          = 'local_replacementapipanorama';
 $plugin->release            = '1.0.0';

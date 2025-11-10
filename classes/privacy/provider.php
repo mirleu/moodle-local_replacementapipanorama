@@ -28,7 +28,6 @@ namespace local_replacementapipanorama\privacy;
  * Basic provider class for YuJa Panorama Moodle plugin.
  */
 class provider implements \core_privacy\local\metadata\null_provider {
-
     /**
      * Returns stringid of a text explaining that this plugin stores no personal data.
      *

@@ -27,8 +27,8 @@ namespace local_replacementapipanorama\external;
 defined('MOODLE_INTERNAL') || die('Must access from moodle');
 
 global $CFG;
-require_once($CFG->dirroot. '/lib/externallib.php');
-require_once($CFG->dirroot. '/local/replacementapipanorama/lib/common_helper_panorama.php');
+require_once($CFG->dirroot . '/lib/externallib.php');
+require_once($CFG->dirroot . '/local/replacementapipanorama/lib/common_helper_panorama.php');
 use common_helper_panorama;
 use external_function_parameters;
 use external_single_structure;
@@ -46,7 +46,6 @@ use context_system;
  * the current module's HTML content.
  */
 class panorama_update_html extends \external_api {
-
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -85,11 +84,15 @@ class panorama_update_html extends \external_api {
         global $DB;
         try {
             self::validate_context(context_system::instance());
-            $params = self::validate_parameters(self::execute_parameters(),
-                compact('resourceid', 'name', 'documentid', 'identifierkey', 'tablename'));
+            $params = self::validate_parameters(
+                self::execute_parameters(),
+                compact('resourceid', 'name', 'documentid', 'identifierkey', 'tablename')
+            );
 
-            if ((empty($params['resourceid']) || empty($params['documentid']) ||
-                empty($params['identifierkey']) || empty($params['tablename']))) {
+            if (
+                (empty($params['resourceid']) || empty($params['documentid']) ||
+                empty($params['identifierkey']) || empty($params['tablename']))
+            ) {
                 throw new invalid_parameter_exception('Missing parameters:');
             }
             // Determine which field to edit and the name of the DB update function.
