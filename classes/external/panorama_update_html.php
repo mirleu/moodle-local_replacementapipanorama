@@ -27,8 +27,24 @@ namespace local_replacementapipanorama\external;
 defined('MOODLE_INTERNAL') || die('Must access from moodle');
 
 global $CFG;
-require_once($CFG->dirroot . '/lib/externallib.php');
-require_once($CFG->dirroot . '/local/replacementapipanorama/lib/common_helper_panorama.php');
+require_once($CFG->dirroot. '/lib/externallib.php');
+require_once($CFG->dirroot. '/mod/assign/lib.php');
+require_once($CFG->dirroot. '/mod/forum/lib.php');
+require_once($CFG->dirroot. '/mod/book/lib.php');
+require_once($CFG->dirroot. '/mod/data/lib.php');
+require_once($CFG->dirroot. '/mod/folder/lib.php');
+require_once($CFG->dirroot. '/mod/glossary/lib.php');
+require_once($CFG->dirroot. '/mod/label/lib.php');
+require_once($CFG->dirroot. '/mod/quiz/lib.php');
+require_once($CFG->dirroot. '/mod/survey/lib.php');
+require_once($CFG->dirroot. '/mod/wiki/lib.php');
+require_once($CFG->dirroot. '/mod/workshop/lib.php');
+require_once($CFG->dirroot. '/mod/page/lib.php');
+require_once($CFG->dirroot. '/mod/forum/lib.php');
+require_once($CFG->dirroot. '/course/lib.php');
+require_once($CFG->dirroot . '/mod/lesson/locallib.php');
+
+require_once($CFG->dirroot. '/local/replacementapipanorama/lib/common_helper_panorama.php');
 use common_helper_panorama;
 use external_function_parameters;
 use external_single_structure;
@@ -46,6 +62,7 @@ use context_system;
  * the current module's HTML content.
  */
 class panorama_update_html extends \external_api {
+
     /**
      * Returns description of method parameters
      * @return external_function_parameters
@@ -57,6 +74,7 @@ class panorama_update_html extends \external_api {
             'documentid' => new external_value(PARAM_TEXT, 'Id of document containing new content'),
             'identifierkey' => new external_value(PARAM_TEXT, 'Identifier Key for Panorama'),
             'tablename' => new external_value(PARAM_TEXT, 'Name of the table of the resource we want to edit', VALUE_REQUIRED),
+            'coursemodule' => new external_value(PARAM_INT, 'The ID of the course module', VALUE_DEFAULT, 0),
         ]);
     }
 
@@ -80,23 +98,93 @@ class panorama_update_html extends \external_api {
      * @param string $identifierkey identifier key for panorama
      * @param string $tablename table of resource to be updated
      */
-    public static function execute($resourceid, $name, $documentid, $identifierkey, $tablename) {
+    public static function execute($resourceid, $name, $documentid, $identifierkey, $tablename, $coursemodule) {
         global $DB;
         try {
             self::validate_context(context_system::instance());
-            $params = self::validate_parameters(
-                self::execute_parameters(),
-                compact('resourceid', 'name', 'documentid', 'identifierkey', 'tablename')
-            );
+            $params = self::validate_parameters(self::execute_parameters(),
+                compact('resourceid', 'name', 'documentid', 'identifierkey', 'tablename', 'coursemodule'));
 
-            if (
-                (empty($params['resourceid']) || empty($params['documentid']) ||
-                empty($params['identifierkey']) || empty($params['tablename']))
-            ) {
+            if ((empty($params['resourceid']) || empty($params['documentid']) ||
+                empty($params['identifierkey']) || empty($params['tablename']))) {
                 throw new invalid_parameter_exception('Missing parameters:');
             }
+
+            $badtags = ['/<html[^>]*>/', '/<\/html>/', '/<body[^>]*>/', '/<\/body>/', '/<base[^>]*>/'];
+
+             if ($tablename === 'lesson_pages') {
+                if (empty($coursemodule)) {
+                    throw new invalid_parameter_exception('Course module ID required for lesson_pages');
+                }
+
+                $cm = get_coursemodule_from_id('lesson', $coursemodule, 0, false, MUST_EXIST);
+                $lessoncontext = context_module::instance($cm->id);
+            
+                self::validate_context($lessoncontext);
+                require_capability('mod/lesson:edit', $lessoncontext);
+
+                $lesson = new \lesson($DB->get_record('lesson', ['id' => $cm->instance], '*', MUST_EXIST));
+                $page = \lesson_page::load($resourceid, $lesson);
+                try {              
+                    $signedurl = common_helper_panorama::get_signed_url($params['documentid'], $params['identifierkey']);
+                    $contenttemp = file_get_contents($signedurl);
+                } catch (\Exception $e) {
+                    return [
+                        'status' => 'failed',
+                        'fileid' => 0,
+                        'error' => "Error occurred: " . $e->getMessage(),
+                    ];
+                }
+
+                $content = preg_replace($badtags, '', $contenttemp);
+                if ($content === false) {
+                    throw new \moodle_exception('Failed to retrieve content');
+                }
+
+                $data = $page->properties();
+                $data->contents_editor = [
+                    'text'   => $content, 
+                    'format' => FORMAT_HTML,
+                    'itemid' => 0 
+                ];
+        
+                $answers = $page->get_answers();
+                $data->answer_editor = [];
+                $data->jumpto = [];
+                $data->score = [];
+
+                $i = 0;
+                foreach ($answers as $answer) {
+                    $data->answer_editor[$i] = $answer->answer;
+                    $data->jumpto[$i]        = $answer->jumpto;
+                    $data->score[$i]         = $answer->score;
+                    $i++;
+                }
+
+                $data->id       = $resourceid;
+                $data->lessonid = $lesson->id;
+                $data->qtype    = $page->qtype;
+                
+               try {
+                    $page->update($data, $lessoncontext);
+                    print_r("DEBUG: Page update completed successfully");
+                } catch (\Exception $e) {
+                    return [
+                        'status' => 'failed',
+                        'fileid' => $resourceid,
+                        'error' => "Update error: " . $e->getMessage(),
+                    ];
+                }
+
+                return [
+                    'status' => 'success',
+                    'fileid' => $resourceid,
+                    'error'  => '',
+                ];
+            }
+
             // Determine which field to edit and the name of the DB update function.
-            $contentfieldname;
+            $contentfieldname = 'content';
             $updatefunction = '';
             switch ($tablename) {
                 case 'assign':
@@ -148,7 +236,6 @@ class panorama_update_html extends \external_api {
                 // For page, this should be a string of the HTML content of the file.
                 $existingcontent = $resource->{$contentfieldname};
                 $contenttemp = file_get_contents($signedurl);
-                $badtags = ['/<html.*>/', '/<\/html>/', '/<body.*>/', '/<\/body>/', '/<base.*>/'];
                 $content = preg_replace($badtags, '', $contenttemp);
                 if ($content === false) {
                     return [
@@ -162,8 +249,12 @@ class panorama_update_html extends \external_api {
                 $resource->revision++;
                 $resource->timemodified = time();
 
+                if ($tablename === 'assign' && !empty($params['coursemodule'])) {
+                    $resource->coursemodule = $coursemodule;
+                }
+                
                 $result = $updatefunction($resource, null);
-                if (!result) {
+                if (!$result) {
                     return [
                         'status' => 'failed',
                         'fileid' => 0,
